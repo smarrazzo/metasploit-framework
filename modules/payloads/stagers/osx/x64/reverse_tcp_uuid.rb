@@ -6,7 +6,7 @@
 module MetasploitModule
   CachedSize = 204
 
-  include Msf::Payload::Osx::ReverseTcp_x64
+  include Msf::Payload::Osx::ReverseTcpX64
   include Msf::Payload::TransportConfig
   include Msf::Payload::Stager
 

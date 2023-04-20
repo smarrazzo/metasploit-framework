@@ -8,9 +8,9 @@ module Msf
 #
 ###
 
-module Payload::Windows::ReverseTcpRc4_x64
+module Payload::Windows::ReverseTcpRc4X64
 
-  include Msf::Payload::Windows::ReverseTcp_x64
+  include Msf::Payload::Windows::ReverseTcpX64
   include Msf::Payload::Windows::Rc4_x64
 
   #

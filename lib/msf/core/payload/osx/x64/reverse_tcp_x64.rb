@@ -7,7 +7,7 @@ module Msf
 # Complex reverse_tcp payload generation for OSX ARCH_X64
 #
 ###
-module Payload::Osx::ReverseTcp_x64
+module Payload::Osx::ReverseTcpX64
 
   include Msf::Payload::TransportConfig
   include Msf::Payload::Stager

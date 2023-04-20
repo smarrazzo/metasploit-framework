@@ -8,7 +8,7 @@ module Msf
 #
 ###
 
-module Payload::Windows::ReverseTcp_x64
+module Payload::Windows::ReverseTcpX64
 
   include Msf::Payload::TransportConfig
   include Msf::Payload::Windows
