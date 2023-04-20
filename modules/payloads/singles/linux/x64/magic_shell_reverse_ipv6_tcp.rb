@@ -32,7 +32,7 @@ module MetasploitModule
     ])
   end
 
-  def convert_input(value, padding, reverse=false)
+  def convert_input(value, padding, reverse = false)
     # converts value to comma separated string of
     # zero-padded bytes to be used in the db instruction
     arr = value.to_s(16).rjust(padding, '0').scan(/../)

