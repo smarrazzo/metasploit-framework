@@ -8,8 +8,9 @@ module Msf
       iconn = opts[:ihost]
       iconn += ':'
       iconn += opts[:iport]
-      n = rand(9...50)
-      r = Random.new.bytes(n - n % 8)
+      iconn += ("\0"*(31-iconn.length))
+      n = rand(1...5)
+      r = Random.new.bytes(n*8)
 
       magic = r
       magic += Aes256.encrypt_aes256(opts[:iv], opts[:key], iconn)

